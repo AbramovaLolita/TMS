@@ -1,5 +1,5 @@
 @echo off
-chcp 65001 >nul
+chcp 1251 >nul
 
 echo ======================================================
 echo     TMS - Test Management System
