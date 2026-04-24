@@ -1,0 +1,87 @@
+<!-- app/templates/projects.html -->
+{% extends "base.html" %}
+
+{% block title %}My projects - TMS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>My projects</h1>
+    <button class="btn btn-primary" onclick="showCreateModal()">+ New project</button>
+</div>
+
+<div id="projects-list" class="cards-grid">
+    <!-- Проекты загрузятся через JS -->
+</div>
+
+<!-- Модальное окно создания проекта -->
+<div id="createModal" class="modal" style="display:none">
+    <div class="modal-content">
+        <h3>Create a project</h3>
+        <input type="text" id="projectTitle" placeholder="Название проекта">
+        <div class="modal-buttons">
+            <button onclick="createProject()" class="btn btn-primary">Create</button>
+            <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadProjects() {
+        const response = await apiRequest('/api/projects/');
+        const projects = await response.json();
+        
+        const container = document.getElementById('projects-list');
+        if (projects.length === 0) {
+            container.innerHTML = '<div class="empty-state">У вас пока нет проектов. Создайте первый!</div>';
+            return;
+        }
+        
+        container.innerHTML = projects.map(project => `
+            <div class="card" onclick="location.href='/projects/${project.id}'">
+                <h3>${escapeHtml(project.title)}</h3>
+                <p>ID: ${project.id}</p>
+            </div>
+        `).join('');
+    }
+    
+    async function createProject() {
+        const title = document.getElementById('projectTitle').value;
+        if (!title) {
+            alert('Enter project name');
+            return;
+        }
+        
+        const response = await apiRequest('/api/projects/', {
+            method: 'POST',
+            body: JSON.stringify({ title: title })
+        });
+        
+        if (response.ok) {
+            closeModal();
+            loadProjects();
+        } else {
+            alert('Ошибка создания проекта');
+        }
+    }
+    
+    function showCreateModal() {
+        document.getElementById('createModal').style.display = 'flex';
+    }
+    
+    function closeModal() {
+        document.getElementById('createModal').style.display = 'none';
+        document.getElementById('projectTitle').value = '';
+    }
+    
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    loadProjects();
+</script>
+{% endblock %}

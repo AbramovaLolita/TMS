@@ -1,0 +1,22 @@
+<!-- app/templates/index.html -->
+{% extends "base.html" %}
+
+{% block title %}Main - TMS{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>Test Management System</h1>
+    <p>Управляйте тестированием ваших проектов</p>
+    
+    {% if not request.headers.get('authorization') %}
+        <div class="buttons">
+            <a href="/login" class="btn btn-primary">Sign in</a>
+            <a href="/register" class="btn btn-secondary">Sign up</a>
+        </div>
+    {% else %}
+        <div class="buttons">
+            <a href="/projects" class="btn btn-primary">My projects</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

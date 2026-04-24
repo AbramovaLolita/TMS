@@ -1,0 +1,96 @@
+<!-- app/templates/base.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TMS - Test Management System{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script>
+        // Храним токен в localStorage
+        function getToken() {
+            return localStorage.getItem('access_token');
+        }
+        
+        function setToken(token) {
+            localStorage.setItem('access_token', token);
+        }
+        
+        function removeToken() {
+            localStorage.removeItem('access_token');
+        }
+        
+        function isAuthenticated() {
+            return getToken() !== null;
+        }
+        
+        function logout() {
+            removeToken();
+            window.location.href = '/login';
+        }
+        
+        // Общая функция для API запросов
+        async function apiRequest(url, options = {}) {
+            const token = getToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+            
+            if (response.status === 401) {
+                removeToken();
+                window.location.href = '/login';
+                throw new Error('Unauthorized');
+            }
+            
+            return response;
+        }
+        
+      
+		function updateNavigation() {
+			const navLinks = document.getElementById('navLinks');
+			const token = localStorage.getItem('access_token');
+    
+			if (token) {
+				navLinks.innerHTML = `
+					<a href="/projects">Projects</a>
+					<a href="/users">Users</a>
+					<a href="#" onclick="logout(); return false;">Exit</a>
+				`;
+			} else {
+				navLinks.innerHTML = `
+					<a href="/login">Sign in</a>
+					<a href="/register">Sign up</a>
+				`;
+			}
+		}
+        
+        // Запускаем обновление навигации после загрузки страницы
+        document.addEventListener('DOMContentLoaded', updateNavigation);
+    </script>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="/" class="logo">TMS</a>
+            <div class="nav-links" id="navLinks">
+                <!-- Навигация заполняется через JavaScript -->
+            </div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!-- app/templates/register.html -->
+{% extends "base.html" %}
+
+{% block title %}Registration - TMS{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2>Registration</h2>
+    <form id="registerForm">
+        <div class="form-group">
+            <label for="username">Login</label>
+            <input type="text" id="username" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" required>
+        </div>
+        <div class="form-group">
+            <label for="confirm_password">Confirm password</label>
+            <input type="password" id="confirm_password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Create an account</button>
+    </form>
+    <p class="auth-link">Already have an account?<a href="/login"> Sign in</a></p>
+    <div id="error" class="error-message" style="display:none"></div>
+</div>
+
+<script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const password = document.getElementById('password').value;
+        const confirm = document.getElementById('confirm_password').value;
+
+        if (password !== confirm) {
+            showError('Пароли не совпадают');
+            return;
+        }
+
+        const data = {
+            username: document.getElementById('username').value,
+            password: password,
+            email: document.getElementById('email').value
+        };
+
+        try {
+            const response = await fetch('/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                // После регистрации сразу логинимся
+                const loginResponse = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        username: data.username,
+                        password: data.password
+                    })
+                });
+
+                if (loginResponse.ok) {
+                    const tokenData = await loginResponse.json();
+                    setToken(tokenData.access_token);
+                    window.location.href = '/projects';
+                }
+            } else {
+                const error = await response.json();
+                showError(error.detail || 'Ошибка регистрации');
+            }
+        } catch (error) {
+            showError('Ошибка соединения');
+        }
+    });
+
+    function showError(msg) {
+        const errorDiv = document.getElementById('error');
+        errorDiv.textContent = msg;
+        errorDiv.style.display = 'block';
+    }
+</script>
+<style>
+.auth-container .btn {
+    width: 100%;
+    margin-bottom: 10px;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,181 @@
+<!-- app/templates/testrun_detail.html -->
+{% extends "base.html" %}
+
+{% block title %}Test run details - TMS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 id="testrun-title">Loading...</h1>
+    <div>
+        <span id="testrun-status" class="status"></span>
+    </div>
+</div>
+
+<div id="testrun-info" class="info-panel"></div>
+
+<h2>Test run results тестов</h2>
+<div id="results-list" class="results-table">
+    Loading...
+</div>
+
+<script>
+    const testrunId = {{ testrun_id }};
+    
+    async function loadTestrun() {
+        const response = await apiRequest(`/api/testruns/${testrunId}`);
+        const tr = await response.json();
+        
+        document.getElementById('testrun-title').textContent = tr.title;
+        
+        const statusSpan = document.getElementById('testrun-status');
+        statusSpan.textContent = tr.status;
+        statusSpan.className = `status status-${tr.status}`;
+        
+        document.getElementById('testrun-info').innerHTML = `
+            <p><strong>Описание:</strong> ${escapeHtml(tr.description || 'Нет описания')}</p>
+            <p><strong>Создан:</strong> ${tr.created_at ? new Date(tr.created_at).toLocaleString() : '—'}</p>
+            ${tr.started_at ? `<p><strong>Запущен:</strong> ${new Date(tr.started_at).toLocaleString()}</p>` : ''}
+            ${tr.completed_at ? `<p><strong>Завершен:</strong> ${new Date(tr.completed_at).toLocaleString()}</p>` : ''}
+        `;
+    }
+    
+    async function loadResults() {
+        const response = await apiRequest(`/api/testresults/testrun/${testrunId}`);
+        const results = await response.json();
+        
+        const container = document.getElementById('results-list');
+        if (results.length === 0) {
+            container.innerHTML = '<div class="empty-state">Нет результатов</div>';
+            return;
+        }
+        
+        container.innerHTML = results.map(result => `
+            <div class="result-card" data-id="${result.id}">
+                <div class="result-header">
+                    <h3>${escapeHtml(result.testcase?.title || 'Тест')}</h3>
+                    <select class="status-select" data-id="${result.id}" onchange="updateStatus(${result.id}, this.value)">
+                        <option value="1" ${result.status_id === 1 ? 'selected' : ''}>✅ passes</option>
+                        <option value="2" ${result.status_id === 2 ? 'selected' : ''}>❌ failed</option>
+                        <option value="3" ${result.status_id === 3 ? 'selected' : ''}>⏭️ skipped</option>
+                        <option value="4" ${result.status_id === 4 ? 'selected' : ''}>⏳ pending</option>
+                    </select>
+                </div>
+                <details>
+                    <summary>Описание тест-кейса</summary>
+                    <pre>${escapeHtml(result.testcase?.description || 'Нет описания')}</pre>
+                </details>
+                <details>
+                    <summary>Шаги воспроизведения</summary>
+                    <pre>${escapeHtml(result.testcase?.steps || 'Нет шагов')}</pre>
+                </details>
+                <details>
+                    <summary>Ожидаемый результат</summary>
+                    <pre>${escapeHtml(result.testcase?.expected_result || 'Не указан')}</pre>
+                </details>
+                <div class="comment-section">
+                    <label>Комментарий:</label>
+                    <textarea class="comment-input" data-id="${result.id}" placeholder="Добавьте комментарий...">${escapeHtml(result.comm || '')}</textarea>
+                    <button class="btn-save-comment" onclick="saveComment(${result.id})">💾 Сохранить комментарий</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    async function updateStatus(resultId, statusId) {
+        const response = await apiRequest(`/api/testresults/${resultId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ status_id: parseInt(statusId) })
+        });
+        
+        if (!response.ok) {
+            alert('Ошибка обновления статуса');
+        }
+    }
+    
+    async function saveComment(resultId) {
+        const comment = document.querySelector(`.comment-input[data-id="${resultId}"]`).value;
+        
+        const response = await apiRequest(`/api/testresults/${resultId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ comm: comment })
+        });
+        
+        if (response.ok) {
+            alert('Комментарий сохранен');
+        } else {
+            alert('Ошибка сохранения комментария');
+        }
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    loadTestrun();
+    loadResults();
+</script>
+
+<style>
+    .info-panel {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .results-table {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    .result-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+    }
+    .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .status-select {
+        padding: 5px 10px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        cursor: pointer;
+    }
+    .comment-section {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+    .comment-section label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    .comment-input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: vertical;
+        margin-bottom: 10px;
+    }
+    .btn-save-comment {
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}

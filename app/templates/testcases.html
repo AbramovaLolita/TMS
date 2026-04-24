@@ -1,0 +1,189 @@
+
+{% extends "base.html" %}
+
+{% block title %}Project test cases - TMS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Project test cases</h1>
+    <!-- Кнопка теперь вызывает универсальную функцию без параметров -->
+    <button class="btn btn-primary" onclick="openModal()">+ New test case</button>
+</div>
+
+<div id="testcases-list" class="cards-grid">
+    Loading...
+</div>
+
+<!-- Единое модальное окно для создания и редактирования -->
+<div id="tcModal" class="modal" style="display:none">
+    <div class="modal-content">
+        <h3 id="modalTitle">Create test case</h3>
+        <form id="tcForm">
+            <input type="hidden" id="tcId">
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" name="title" id="title" required placeholder="">
+            </div>
+            <div class="form-group">
+                <label>Steps to reproduce</label>
+                <textarea name="steps" id="steps" rows="5" placeholder=""></textarea>
+            </div>
+            <div class="form-group">
+                <label>Expected result</label>
+                <textarea name="expected_result" id="expected_result" rows="3" placeholder=""></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Используем фильтр | tojson для безопасности данных
+    const projectId = {{ project_id | tojson }};
+    const form = document.getElementById('tcForm');
+    const modal = document.getElementById('tcModal');
+
+    // Функция загрузки списка
+    async function loadTestcases() {
+        try {
+            const response = await apiRequest(`/api/projects/${projectId}/testcases`);
+            const testcases = await response.json();
+
+            const container = document.getElementById('testcases-list');
+            if (testcases.length === 0) {
+                container.innerHTML = '<div class="empty-state">Нет тест-кейсов. Создайте первый!</div>';
+                return;
+            }
+
+            container.innerHTML = testcases.map(tc => renderCard(tc)).join('');
+        } catch (error) {
+            console.error('Error loading testcases:', error);
+        }
+    }
+
+    // Вспомогательная функция для отрисовки одной карточки
+    function renderCard(tc) {
+        return `
+            <div class="card">
+                <div class="card-header">
+                    <h3>${escapeHtml(tc.title)}</h3>
+                    <div class="card-actions">
+                        <button class="btn-icon" onclick="event.stopPropagation(); editTestcase(${tc.id})">✏️</button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); deleteTestcase(${tc.id})">🗑️</button>
+                    </div>
+                </div>
+<!--                <p class="description">${escapeHtml(tc.description || 'No description')}</p>-->
+                ${tc.steps ? `<details><summary>Steps</summary><pre>${escapeHtml(tc.steps)}</pre></details>` : ''}
+                ${tc.expected_result ? `<details><summary>Expected result</summary><pre>${escapeHtml(tc.expected_result)}</pre></details>` : ''}
+            </div>
+        `;
+    }
+
+    // Универсальная функция открытия модального окна
+    function openModal(editData = null) {
+        form.reset(); // Очищаем форму
+        if (editData) {
+            document.getElementById('modalTitle').innerText = 'Редактировать тест-кейс';
+            document.getElementById('tcId').value = editData.id;
+            // Автоматически заполняем поля формы данными из объекта
+            Object.keys(editData).forEach(key => {
+                if (form[key]) form[key].value = editData[key] || '';
+            });
+        } else {
+            document.getElementById('modalTitle').innerText = 'Создать тест-кейс';
+            document.getElementById('tcId').value = '';
+        }
+        modal.style.display = 'flex';
+    }
+
+    // Единый обработчик отправки формы
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('tcId').value;
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        const url = id ? `/api/testcases/${id}` : `/api/projects/${projectId}/testcases`;
+        const method = id ? 'PUT' : 'POST';
+
+        try {
+            const response = await apiRequest(url, {
+                method: method,
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                closeModal();
+                loadTestcases();
+            } else {
+                alert('Ошибка при сохранении');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    async function editTestcase(id) {
+        const response = await apiRequest(`/api/testcases/${id}`);
+        const tc = await response.json();
+        openModal(tc);
+    }
+
+    async function deleteTestcase(id) {
+        if (confirm('Are you sure?')) {
+            const response = await apiRequest(`/api/testcases/${id}`, { method: 'DELETE' });
+            if (response.ok) loadTestcases();
+        }
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    loadTestcases();
+</script>
+
+<style>
+    /* Ваши стили остаются прежними */
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .card-actions { display: flex; gap: 10px; }
+    .btn-icon { background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px; }
+    .btn-icon:hover { opacity: 0.7; }
+    details { margin-top: 10px; font-size: 0.9em; }
+    pre { background: #f5f5f5; padding: 5px; white-space: pre-wrap; }
+    .modal {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+    }
+    .modal-content { background: white; padding: 20px; border-radius: 8px; width: 500px; max-width: 90%; }
+     .form-group {
+        margin-bottom: 15px;
+        width: 100%; /* или фиксированная ширина, например 500px */
+    }
+
+    .form-group input,
+    .form-group textarea {
+        width: 100%; /* все поля будут одинаковой ширины */
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box; /* важно для учёта padding в ширине */
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
