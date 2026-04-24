@@ -86,14 +86,14 @@
     function openModal(editData = null) {
         form.reset(); // Очищаем форму
         if (editData) {
-            document.getElementById('modalTitle').innerText = 'Редактировать тест-кейс';
+            document.getElementById('modalTitle').innerText = 'Edit testcase';
             document.getElementById('tcId').value = editData.id;
             // Автоматически заполняем поля формы данными из объекта
             Object.keys(editData).forEach(key => {
                 if (form[key]) form[key].value = editData[key] || '';
             });
         } else {
-            document.getElementById('modalTitle').innerText = 'Создать тест-кейс';
+            document.getElementById('modalTitle').innerText = 'Create testcase';
             document.getElementById('tcId').value = '';
         }
         modal.style.display = 'flex';
@@ -119,7 +119,7 @@
                 closeModal();
                 loadTestcases();
             } else {
-                alert('Ошибка при сохранении');
+                alert('Saving error');
             }
         } catch (err) {
             console.error(err);

@@ -37,3 +37,8 @@ class Base(DeclarativeBase):
     __abstract__ = True
     created_at: Mapped[created_at]
     updated_at: Mapped[updated_at]
+
+def init_db():
+    """Создаёт таблицы в базе данных, если их нет"""
+    Base.metadata.create_all(bind=engine)
+    print("Таблицы проверены/созданы")

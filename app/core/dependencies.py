@@ -29,6 +29,4 @@ async def get_current_user(
     user = db.query(User).filter(User.id == int(user_id)).first()
     if user is None:
         raise credentials_exception
-
-    print(f"✅ Авторизован пользователь: {user.username} (id={user.id})")
     return user

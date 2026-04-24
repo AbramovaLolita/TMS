@@ -324,5 +324,13 @@
         padding: 40px;
         color: #999;
     }
+    .form-group input,
+    .form-group textarea {
+        width: 100%; /* все поля будут одинаковой ширины */
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box; /* важно для учёта padding в ширине */
+    }
 </style>
 {% endblock %}

@@ -3,7 +3,9 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from app.routes import projects, testcases, users, testruns, statuses, auth, testresults
+from app.db.database import init_db
 
+init_db()
 
 app = FastAPI(
     title="TMS API",

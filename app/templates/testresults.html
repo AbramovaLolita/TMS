@@ -32,8 +32,8 @@
         statusSpan.className = `status status-${tr.status}`;
         
         document.getElementById('testrun-info').innerHTML = `
-            <p><strong>Описание:</strong> ${escapeHtml(tr.description || 'Нет описания')}</p>
-            <p><strong>Создан:</strong> ${tr.created_at ? new Date(tr.created_at).toLocaleString() : '—'}</p>
+            <p><strong>Description:</strong> ${escapeHtml(tr.description || 'Нет описания')}</p>
+            <p><strong>Created:</strong> ${tr.created_at ? new Date(tr.created_at).toLocaleString() : '—'}</p>
             ${tr.started_at ? `<p><strong>Запущен:</strong> ${new Date(tr.started_at).toLocaleString()}</p>` : ''}
             ${tr.completed_at ? `<p><strong>Завершен:</strong> ${new Date(tr.completed_at).toLocaleString()}</p>` : ''}
         `;
