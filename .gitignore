@@ -1,1 +1,4 @@
-/TMS/app/db/.env
+.env
+**/__pycache__/
+.venv
+.idea
