@@ -87,7 +87,8 @@ def update_testresult(
         TestResult.id == testresult_id,
         Project.owner_id == current_user.id
     ).first()
-
+    if hasattr(result, 'testcase_id') and result.testcase_id is not None:
+        raise HTTPException(400, "Changing testcase_id is not allowed")
     if not testresult:
         raise HTTPException(404, "Result not found")
 

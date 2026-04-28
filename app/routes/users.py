@@ -76,7 +76,20 @@ def update_user(
     return db_user
 
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+
+
+user_router = APIRouter(prefix="/api/users", tags=["users"])
+
+@user_router.get("/", response_model=List[UserResponse])
+def get_users(
+        db: db_dependency,
+        current_user: User = Depends(get_current_user)  # для единообразия
+):
+    """ получение списка всех статусов"""
+    return db.query(User).all()
+
+
+@user_router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_project(
         user_id: int,
         db: db_dependency
@@ -95,19 +108,6 @@ def delete_project(
 
     # удаление проекта
     db.delete(db_user)
-
     # сохранение
     db.commit()
-
     return None
-
-
-user_router = APIRouter(prefix="/api/users", tags=["users"])
-
-@user_router.get("/", response_model=List[UserResponse])
-def get_users(
-        db: db_dependency,
-        current_user: User = Depends(get_current_user)  # для единообразия
-):
-    """ получение списка всех статусов"""
-    return db.query(User).all()

@@ -26,4 +26,4 @@ class TestCaseUpdate(BaseModel):
     description: Optional[str] = None
     steps: Optional[str] = None
     expected_result: Optional[str] = None
-    project_id: int
+

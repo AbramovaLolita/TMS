@@ -86,7 +86,7 @@ def testrun_detail_page(request: Request, testrun_id: int):
     return templates.TemplateResponse(
         request=request,
         name="testrun_detail.html",
-        context={"testrun_id": testrun_id}
+        context={"testrun_id": int(testrun_id)}
     )
 
 @app.get("/statuses")

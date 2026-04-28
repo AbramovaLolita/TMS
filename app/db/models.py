@@ -13,12 +13,20 @@ class Project(Base):
 
     id: Mapped[int_pk]
     title: Mapped[str_null_false]
-    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
 
     # Связи
     owner: Mapped["User"] = relationship(back_populates="projects")
-    testcases: Mapped[list["TestCase"]] = relationship(back_populates="project")
-    testruns: Mapped[list["TestRun"]] = relationship(back_populates="project")
+    testcases: Mapped[list["TestCase"]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
+    testruns: Mapped[list["TestRun"]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
 
 
 class TestCase(Base):
@@ -29,11 +37,15 @@ class TestCase(Base):
     description: Mapped[str | None] = mapped_column(Text)
     steps: Mapped[str | None] = mapped_column(Text)
     expected_result: Mapped[str | None] = mapped_column(Text)
-    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), nullable=False)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
 
     # cвязи
     project: Mapped["Project"] = relationship(back_populates="testcases")
-    testresults: Mapped[list["TestResult"]] = relationship(back_populates="testcase")
+    testresults: Mapped[list["TestResult"]] = relationship(
+        back_populates="testcase",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
 
 
 class TestRun(Base):
@@ -41,8 +53,8 @@ class TestRun(Base):
 
     id: Mapped[int_pk]
     title: Mapped[str_null_false]
-    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), nullable=False)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
 
 
     # Временные метки
@@ -55,8 +67,12 @@ class TestRun(Base):
 
     # cвязи
     project: Mapped["Project"] = relationship(back_populates="testruns")
-    owner: Mapped["User"] = relationship(back_populates="testruns")  # ✅ Добавил связь с владельцем
-    test_results: Mapped[list["TestResult"]] = relationship(back_populates="test_run")
+    owner: Mapped["User"] = relationship(back_populates="testruns")
+    test_results: Mapped[list["TestResult"]] = relationship(
+        back_populates="test_run",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
 
 
 class User(Base):
@@ -68,8 +84,16 @@ class User(Base):
     email: Mapped[str_null_true]
 
     # cвязи
-    projects: Mapped[list["Project"]] = relationship(back_populates="owner")
-    testruns: Mapped[list["TestRun"]] = relationship(back_populates="owner")  # ✅ Добавил
+    projects: Mapped[list["Project"]] = relationship(
+        back_populates="owner",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
+    testruns: Mapped[list["TestRun"]] = relationship(
+        back_populates="owner",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
 
 
 class Status(Base):
@@ -79,19 +103,19 @@ class Status(Base):
     name: Mapped[str_null_false]
 
     # cвязи
-    testresults: Mapped[list["TestResult"]] = relationship(back_populates="status")  # ✅ Добавил
+    testresults: Mapped[list["TestResult"]] = relationship(back_populates="status")
 
 
 class TestResult(Base):
     __tablename__ = "testresults"
 
     id: Mapped[int_pk]
-    testrun_id: Mapped[int] = mapped_column(ForeignKey("testruns.id"), nullable=False)  # ✅ Исправил: testruns.id
-    testcase_id: Mapped[int] = mapped_column(ForeignKey("testcases.id"), nullable=False)
-    status_id: Mapped[int] = mapped_column(ForeignKey("statuses.id"), nullable=False)
+    testrun_id: Mapped[int] = mapped_column(ForeignKey("testruns.id", ondelete="CASCADE"))
+    testcase_id: Mapped[int] = mapped_column(ForeignKey("testcases.id", ondelete="CASCADE"))
+    status_id: Mapped[int] = mapped_column(ForeignKey("statuses.id", ondelete="CASCADE"))
     comm: Mapped[str | None] = mapped_column(Text)
 
     # cвязи
     testcase: Mapped["TestCase"] = relationship(back_populates="testresults")
     test_run: Mapped["TestRun"] = relationship(back_populates="test_results")
-    status: Mapped["Status"] = relationship(back_populates="testresults")  # ✅ Добавил back_populates
+    status: Mapped["Status"] = relationship(back_populates="testresults")
